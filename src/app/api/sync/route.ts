@@ -3,13 +3,12 @@ import { supabase } from '@/lib/supabase';
 import { PowensConnector } from '@/lib/bank/powens';
 import webpush from 'web-push';
 
-webpush.setVapidDetails(
-  `mailto:${process.env.VAPID_CONTACT_EMAIL ?? 'admin@example.com'}`,
-  process.env.VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!
-);
-
 export async function POST() {
+  webpush.setVapidDetails(
+    `mailto:${process.env.VAPID_CONTACT_EMAIL ?? 'admin@example.com'}`,
+    process.env.VAPID_PUBLIC_KEY!,
+    process.env.VAPID_PRIVATE_KEY!
+  );
   const connector = new PowensConnector();
 
   // Fetch last 90 days to catch delayed transactions

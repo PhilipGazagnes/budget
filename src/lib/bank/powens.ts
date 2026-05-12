@@ -7,19 +7,34 @@ export class PowensConnector implements BankConnector {
     const token = process.env.POWENS_USER_TOKEN;
     if (!token) throw new Error('POWENS_USER_TOKEN not set — run the /connect flow first');
 
-    const url = new URL(`${BASE_URL}/users/me/transactions`);
-    url.searchParams.set('min_date', fromDate);
-    url.searchParams.set('max_date', toDate);
-    url.searchParams.set('coming', 'false'); // exclude pending transactions
+    const allTxs: Record<string, unknown>[] = [];
+    let offset = 0;
+    const limit = 500;
 
-    const res = await fetch(url.toString(), {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!res.ok) throw new Error(`Powens transactions failed: ${res.status}`);
+    while (true) {
+      const url = new URL(`${BASE_URL}/users/me/transactions`);
+      url.searchParams.set('min_date', fromDate);
+      url.searchParams.set('max_date', toDate);
+      url.searchParams.set('coming', '0');
+      url.searchParams.set('limit', String(limit));
+      url.searchParams.set('offset', String(offset));
 
-    const data = await res.json();
-    const txs: Record<string, unknown>[] = data.transactions ?? [];
+      const res = await fetch(url.toString(), {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        const body = await res.text();
+        throw new Error(`Powens transactions failed: ${res.status} — ${body}`);
+      }
 
+      const data = await res.json();
+      const page: Record<string, unknown>[] = data.transactions ?? [];
+      allTxs.push(...page);
+      if (page.length < limit) break;
+      offset += limit;
+    }
+
+    const txs = allTxs;
     return txs.map((t) => ({
       externalId: String(t.id),
       date: t.date as string,

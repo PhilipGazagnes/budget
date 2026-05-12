@@ -87,6 +87,15 @@ export default function Home() {
           >
             {syncing ? 'Syncing…' : 'Sync now'}
           </button>
+          <button
+            onClick={async () => {
+              await fetch('/api/auth/logout', { method: 'POST' });
+              window.location.href = '/login';
+            }}
+            className="px-3 py-1.5 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300"
+          >
+            Log out
+          </button>
         </div>
       </div>
 

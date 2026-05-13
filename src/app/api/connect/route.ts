@@ -35,6 +35,19 @@ async function getOrCreateUserToken(): Promise<string> {
 }
 
 export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+
+  if (searchParams.get('action') === 'status') {
+    if (!process.env.POWENS_USER_TOKEN) return NextResponse.json({ connected: false });
+    const res = await fetch(`${BASE_URL}/users/me/connections`, {
+      headers: { Authorization: `Bearer ${process.env.POWENS_USER_TOKEN}` },
+    });
+    if (!res.ok) return NextResponse.json({ connected: false });
+    const { connections } = await res.json();
+    const active = (connections as { active: boolean }[]).filter((c) => c.active);
+    return NextResponse.json({ connected: active.length > 0 });
+  }
+
   const token = await getOrCreateUserToken();
 
   // Generate a short-lived code for the webview

@@ -11,10 +11,16 @@ export async function POST() {
   );
   const connector = new PowensConnector();
 
-  // Fetch last 90 days to catch delayed transactions
   const toDate = new Date().toISOString().slice(0, 10);
-  const from = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
-  const fromDate = from.toISOString().slice(0, 10);
+  const { data: stateRows } = await supabase
+    .from('app_state')
+    .select('value')
+    .eq('key', 'last_synced_at')
+    .single();
+  const lastSyncedAt = stateRows?.value;
+  const fromDate = lastSyncedAt
+    ? lastSyncedAt.slice(0, 10)
+    : new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
   const transactions = await connector.fetchTransactions(fromDate, toDate);
 
